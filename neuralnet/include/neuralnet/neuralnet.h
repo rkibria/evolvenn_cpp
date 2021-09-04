@@ -10,8 +10,10 @@ public:
 
     size_t run(const double* inputs, std::vector<double>& outputs) const;
 
+    std::vector<double>& getWeights() { return weights; }
     const std::vector<double>& getWeights() const { return weights; }
     void setWeights(std::vector<double>&& w) { weights = w; }
+    void setWeights(const std::vector<double>& w) { weights = w; }
 
 private:
     size_t nInputs;

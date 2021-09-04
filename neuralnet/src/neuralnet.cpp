@@ -38,7 +38,9 @@ size_t NeuralNet::run(const double* inputs, std::vector<double>& outputs) const
             for(size_t w = 0; w < lastInputs; ++w) {
                 weightedInputs += weights[weightsBegin++] * (*(inputPtr + w));
             }
-            outputs[outputBegin + neuIdx] = weightedInputs;
+            // https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
+            const auto activation = std::max(0.0, weightedInputs);
+            outputs[outputBegin + neuIdx] = activation;
         }
 
         inputPtr = &outputs.data()[outputBegin];
