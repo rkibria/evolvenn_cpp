@@ -10,9 +10,9 @@ NeuralNet::NeuralNet(size_t nInputs_, const std::vector<size_t>& layerSizes_)
     size_t nWeights = 0;
     auto lastInputs = nInputs;
     for(size_t i = 0; i < layerSizes.size(); ++i) {
-        const auto lyrSz = layerSizes[i];
-        nWeights += (1 + lyrSz) * lastInputs;
-        lastInputs = lyrSz;
+        const auto lrSz = layerSizes[i];
+        nWeights += (1 + lrSz) * lastInputs;
+        lastInputs = lrSz;
     }
     weights.resize(nWeights);
 
@@ -29,23 +29,20 @@ size_t NeuralNet::run(const double* inputs, std::vector<double>& outputs) const
     auto lastInputs = nInputs;
     size_t weightsBegin = 0;
     size_t outputBegin;
-    for(size_t i = 0; i < layerSizes.size(); ++i) {
-        outputBegin = (i % 2) * maxOutputsSize;
-        const auto lyrSz = layerSizes[i];
+    for(size_t lrIdx = 0; lrIdx < layerSizes.size(); ++lrIdx) {
+        const auto lrSz = layerSizes[lrIdx];
+        outputBegin = (lrIdx % 2) * maxOutputsSize;
 
-        for(size_t n = 0; n < lyrSz; ++n) {
-            auto weightedInputs = weights[weightsBegin + n * lyrSz];
-            auto weightsIdx = weightsBegin + 1;
-            for(size_t w = 0; w < lyrSz; ++w) {
-                weightedInputs += weights[weightsBegin + w] * (*inputPtr);
-                ++inputPtr;
+        for(size_t neuIdx = 0; neuIdx < lrSz; ++neuIdx) {
+            auto weightedInputs = weights[weightsBegin++];
+            for(size_t w = 0; w < lastInputs; ++w) {
+                weightedInputs += weights[weightsBegin++] * (*(inputPtr + w));
             }
-            outputs[outputBegin + n] = weightedInputs;
+            outputs[outputBegin + neuIdx] = weightedInputs;
         }
 
         inputPtr = &outputs.data()[outputBegin];
-        weightsBegin += 1 + lyrSz * lastInputs;
-        lastInputs = lyrSz;
+        lastInputs = lrSz;
     }
 
     return outputBegin;
