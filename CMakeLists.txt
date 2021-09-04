@@ -6,11 +6,14 @@ project(evolvenn)
 find_package(Boost)
 find_package(TBB)
 
+add_subdirectory(neuralnet)
+
 add_executable(evolvenn
     main.cpp
     )
 
 target_link_libraries(evolvenn
+    neuralnet
     Boost::boost
     Boost::serialization
     TBB::tbb
