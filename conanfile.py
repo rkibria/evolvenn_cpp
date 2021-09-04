@@ -3,7 +3,7 @@ from conans import ConanFile, tools, CMake
 class EvolveNNConan(ConanFile):
     name = "EvolveNN"
     version = "0.1"
-    requires = "tbb/2020.3", "boost/1.76.0"
+    requires = "tbb/2020.3", "boost/1.76.0", "catch2/2.13.7"
     default_options = {
         "boost:numa": False,
         "boost:zlib": False,
