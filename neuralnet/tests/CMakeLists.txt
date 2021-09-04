@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 
+find_package(Catch2)
+
 set(UNIT_TEST_LIST
     basics
     )
@@ -14,7 +16,7 @@ add_executable(${TARGET_NAME}
   main.cpp
   ${UNIT_TEST_SOURCE_LIST})
 
-target_link_libraries(${TARGET_NAME} PUBLIC neuralnet)
+target_link_libraries(${TARGET_NAME} PUBLIC neuralnet Catch2::Catch2)
 
 target_include_directories(${TARGET_NAME} PUBLIC .)
 
