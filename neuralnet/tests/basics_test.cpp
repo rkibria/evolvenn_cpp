@@ -64,3 +64,22 @@ TEST_CASE( "Each neuron sums up each input one to one", "[neuralnet]" ) {
     REQUIRE(outputs[0] == 18);
     REQUIRE(outputs[1] == 18);
 }
+
+TEST_CASE( "Activation is applied correctly", "[neuralnet]" ) {
+    NeuralNet nn(2, {2, 3, 2});
+    nn.setWeights({   0, 1, 1,
+                      0, 1, 1,
+
+                      0, 1, 1,
+                      0, 1, 1,
+                      0, 1, 1,
+
+                      0, 1, 1, -1,
+                      0, 1, -1, -1
+                  });
+    std::vector<double> outputs;
+    const double inputs[2] = {1.0, 2.0};
+    const auto result = nn.run(inputs, outputs);
+    REQUIRE(outputs[0] == 6);
+    REQUIRE(outputs[1] == 0);
+}
