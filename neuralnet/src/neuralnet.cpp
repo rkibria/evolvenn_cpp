@@ -22,12 +22,10 @@ NeuralNet::NeuralNet(size_t nInputs_, const std::vector<size_t>& layerSizes_)
     }
 }
 
-const double* NeuralNet::run(const std::vector<double>& inputs)
+const double* NeuralNet::run(const double* inputs)
 {
-    assert(inputs.size() == nInputs);
-
     const auto maxOutputsSize = outputs.size() / 2;
-    auto inputPtr = inputs.data();
+    auto inputPtr = inputs;
     auto lastInputs = nInputs;
     size_t weightsBegin = 0;
     size_t outputStart = 0;

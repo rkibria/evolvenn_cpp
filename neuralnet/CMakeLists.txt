@@ -5,3 +5,5 @@ add_library(neuralnet STATIC
     )
 
 target_include_directories(neuralnet PUBLIC include)
+
+add_subdirectory(tests)
