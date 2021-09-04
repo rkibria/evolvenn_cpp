@@ -6,10 +6,13 @@
 class NeuralNet
 {
 public:
-    NeuralNet(int nInputs, const std::vector<int>& layerSizes);
+    NeuralNet(size_t nInputs, const std::vector<size_t>& layerSizes);
+
+    const double* run(const std::vector<double>& inputs);
 
 private:
-    std::vector<double> layerSizes;
+    size_t nInputs;
+    std::vector<size_t> layerSizes;
     std::vector<double> weights;
     std::vector<double> outputs;
 };
