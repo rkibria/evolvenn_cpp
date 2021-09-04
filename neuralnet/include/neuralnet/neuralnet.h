@@ -8,7 +8,7 @@ class NeuralNet
 public:
     NeuralNet(size_t nInputs, const std::vector<size_t>& layerSizes);
 
-    const double* run(const double* inputs);
+    size_t run(const double* inputs, std::vector<double>& outputs) const;
 
     const std::vector<double>& getWeights() const { return weights; }
     void setWeights(std::vector<double>&& w) { weights = w; }
@@ -17,7 +17,7 @@ private:
     size_t nInputs;
     std::vector<size_t> layerSizes;
     std::vector<double> weights;
-    std::vector<double> outputs;
+    size_t maxOutputsSize{ 0 };
 };
 
 #endif // NEURALNET_H
