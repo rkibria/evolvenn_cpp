@@ -15,12 +15,11 @@ NeuralNet::NeuralNet(size_t nInputs_, const std::vector<size_t>& layerSizes_)
         lastInputs = lrSz;
     }
     weights.resize(nWeights);
-
-    maxOutputsSize = *std::max_element(layerSizes.cbegin(), layerSizes.cend());
 }
 
 size_t NeuralNet::run(const double* inputs, std::vector<double>& outputs) const
 {
+    const auto maxOutputsSize = *std::max_element(layerSizes.cbegin(), layerSizes.cend());
     if(outputs.size() < maxOutputsSize) {
         outputs.resize(maxOutputsSize * 2);
     }
@@ -31,7 +30,7 @@ size_t NeuralNet::run(const double* inputs, std::vector<double>& outputs) const
     size_t outputBegin;
     for(size_t lrIdx = 0; lrIdx < layerSizes.size(); ++lrIdx) {
         const auto lrSz = layerSizes[lrIdx];
-        outputBegin = (lrIdx % 2) * maxOutputsSize;
+        outputBegin = (lrIdx % 2 ) ? maxOutputsSize : 0;
 
         for(size_t neuIdx = 0; neuIdx < lrSz; ++neuIdx) {
             auto weightedInputs = weights[weightsBegin++];

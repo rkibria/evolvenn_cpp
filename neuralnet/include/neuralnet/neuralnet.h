@@ -16,10 +16,9 @@ public:
     void setWeights(const std::vector<double>& w) { weights = w; }
 
 private:
-    size_t nInputs;
-    std::vector<size_t> layerSizes;
+    const size_t nInputs;
+    const std::vector<size_t> layerSizes;
     std::vector<double> weights;
-    size_t maxOutputsSize{ 0 };
 };
 
 #endif // NEURALNET_H
