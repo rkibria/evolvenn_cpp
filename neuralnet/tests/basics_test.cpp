@@ -2,7 +2,7 @@
 
 #include "neuralnet/neuralnet.h"
 
-TEST_CASE( "Can create a neural net object", "[neuralnet]" ) {
-    NeuralNet nn(4, {4, 4, 2});
-    REQUIRE( true );
+TEST_CASE( "Neural net weights have expected number", "[neuralnet]" ) {
+    NeuralNet nn(2, {2, 3, 2});
+    REQUIRE( nn.getWeights().size() == 23 );
 }
