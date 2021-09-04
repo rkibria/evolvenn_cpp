@@ -23,7 +23,6 @@ public:
     void addIndividual(std::unique_ptr<Individual>&& idv);
 
     void evolve(double spread);
-    void clearFitnesses();
 
 private:
     std::unique_ptr<PopulationVector> individuals;

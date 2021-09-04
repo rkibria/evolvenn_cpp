@@ -29,6 +29,7 @@ void Population::addIndividual(std::unique_ptr<Individual>&& idv)
 void Population::evolve(double spread)
 {
     for(const auto& uptr : *individuals) {
+        uptr->setFitness(0);
         uptr->evaluate();
     }
 
@@ -48,11 +49,6 @@ void Population::evolve(double spread)
             parent->mutate(spread);
         }
     }
-}
 
-void Population::clearFitnesses()
-{
-    for(size_t i = 0; i < individuals->size(); ++i) {
-        (*individuals)[i]->setFitness(0);
-    }
+    isFirstGeneration = false;
 }
