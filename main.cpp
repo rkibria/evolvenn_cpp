@@ -2,6 +2,7 @@
 #include <cmath>
 #include <chrono>
 #include <random>
+#include <iomanip>
 
 #include "neuralnet/neuralnet.h"
 #include "population/population.h"
@@ -73,20 +74,26 @@ public:
         std::vector<double> outputs;
         for(int i = 0; i < 100; ++i) {
             const double x = -M_PI + 2 * M_PI / 100 * i;
-            double inputs = x;
+            double inputs = x * 10.0;
             const auto resultIdx = nn.run(&inputs, outputs);
             double val = 0.0;
             int inc = 1;
             for(size_t k =  0; k < 8; ++k) {
                 const auto result = outputs[resultIdx + k];
-                val += inc * (result > 1 ? 1 : 0);
+                const bool doInc = (result > 0);
+//                std::cout << (doInc ? "1" : "0");
+                val += inc * (doInc ? 1 : 0);
                 inc *= 2;
             }
             val = (val - 127) / 255;
-            auto diff = val - sin(x);
+            const auto expect = sin(x);
+            auto diff = val - expect;
             diff *= diff;
+//            std::cout << "\nval " << val << " vs real " << expect << " diff " << diff << "\n";
+//            std::cout << diff << " ";
             fitness += diff;
         }
+//        std::cout << "idv fit " <<  std::setprecision(30) << fitness << "\n";
     }
 
     void copyFrom(const Individual* other) override
@@ -99,9 +106,10 @@ public:
 
 void evolution1()
 {
-    const size_t popSize = 10;
+    const size_t popSize = 5000;
     const double mutationSpread = 1;
     const double mutationHalflife = 100;
+    const size_t numGens = 10000;
 
     Population pop;
     for(size_t i = 0; i < popSize; ++i) {
@@ -111,21 +119,22 @@ void evolution1()
     const auto start = std::chrono::high_resolution_clock::now();
 
     size_t generation = 1;
-    while(generation < 1000) {
-        const double halflifeFactor = (mutationHalflife > 0) ? pow(2, -(generation % 1000) / mutationHalflife) : 1;
-        const double spread = std::max(mutationSpread * halflifeFactor, mutationSpread * 0.01);
+    while(generation < numGens) {
+        const double halflifeFactor = 1.0; // TODO this returns inf (mutationHalflife > 0) ? pow(2.0, -(generation % 1000) / mutationHalflife) : 1;
+        const double spread = (1.0 - (generation / static_cast<double>(numGens))) * 1.0; // TODO std::max(mutationSpread * halflifeFactor, mutationSpread * 0.01);
 
         pop.evolve(spread);
-        std::cout << "gen " << generation << ": " << pop.getIndividual(0)->getFitness() << "\n";
 
-        double sum = 0;
-        for(size_t i = 0; i < pop.size(); ++i) {
-            std::cout << i << " fitness " << pop.getIndividual(i)->getFitness() << "\n";
-            sum += pop.getIndividual(i)->getFitness();
+        if(generation % 10 == 0) {
+            std::cout << "gen " << generation << ": " << pop.getIndividual(0)->getFitness() << " // spread " << spread << "\n";
+
+            double sum = 0;
+            for(size_t i = 0; i < pop.size(); ++i) {
+    //            std::cout << i << " fitness " << pop.getIndividual(i)->getFitness() << "\n";
+                sum += pop.getIndividual(i)->getFitness();
+            }
+            std::cout << "avg " << sum << "\n";
         }
-        std::cout << "avg " << sum << "\n";
-        int zz;
-        std::cin >> zz;
 
         ++generation;
     }

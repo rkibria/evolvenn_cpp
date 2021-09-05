@@ -39,11 +39,8 @@ void Population::evolve(double spread)
               const std::unique_ptr<Individual>& b) { return a->getFitness() < b->getFitness(); } );
 
     for(size_t i = 0; i < size(); ++i) {
-        std::cout << i << " --- fitness " << getIndividual(i)->getFitness() << "\n";
+//        std::cout << i << " --- fitness " << getIndividual(i)->getFitness() << "\n";
     }
-    int zz;
-    std::cin >> zz;
-
 
     const auto halfSize = individuals->size() / 2;
 
