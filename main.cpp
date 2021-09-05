@@ -89,14 +89,19 @@ public:
         }
     }
 
+    void copyFrom(const Individual* other) override
+    {
+        nn = dynamic_cast<const NnIndividual*>(other)->nn;
+    }
+
     NeuralNet nn;
 };
 
 void evolution1()
 {
-    const size_t popSize = 1000;
-    const double mutationSpread = 25;
-    const size_t mutationHalflife = 100;
+    const size_t popSize = 10;
+    const double mutationSpread = 1;
+    const double mutationHalflife = 100;
 
     Population pop;
     for(size_t i = 0; i < popSize; ++i) {
@@ -112,6 +117,15 @@ void evolution1()
 
         pop.evolve(spread);
         std::cout << "gen " << generation << ": " << pop.getIndividual(0)->getFitness() << "\n";
+
+        double sum = 0;
+        for(size_t i = 0; i < pop.size(); ++i) {
+            std::cout << i << " fitness " << pop.getIndividual(i)->getFitness() << "\n";
+            sum += pop.getIndividual(i)->getFitness();
+        }
+        std::cout << "avg " << sum << "\n";
+        int zz;
+        std::cin >> zz;
 
         ++generation;
     }

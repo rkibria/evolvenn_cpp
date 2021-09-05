@@ -1,6 +1,7 @@
 #include "population/population.h"
 
 #include <algorithm>
+#include <iostream>
 
 Population::Population()
     : individuals{ std::make_unique<PopulationVector>() }
@@ -34,8 +35,15 @@ void Population::evolve(double spread)
     }
 
     std::sort(individuals->begin(), individuals->end(),
-              [](const std::unique_ptr<Individual>& idv1,
-              const std::unique_ptr<Individual>& idv2) { return idv1->getFitness() < idv2->getFitness(); } );
+              [](const std::unique_ptr<Individual>& a,
+              const std::unique_ptr<Individual>& b) { return a->getFitness() < b->getFitness(); } );
+
+    for(size_t i = 0; i < size(); ++i) {
+        std::cout << i << " --- fitness " << getIndividual(i)->getFitness() << "\n";
+    }
+    int zz;
+    std::cin >> zz;
+
 
     const auto halfSize = individuals->size() / 2;
 
@@ -43,7 +51,7 @@ void Population::evolve(double spread)
         const auto& parent = (*individuals)[i];
         const auto& offspring = (*individuals)[halfSize + i];
 
-        *offspring = *parent;
+        offspring->copyFrom(parent.get());
         offspring->mutate(spread);
         if(i != 0) {
             parent->mutate(spread);

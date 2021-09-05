@@ -11,6 +11,7 @@ public:
 
     virtual void mutate(double spread) = 0;
     virtual void evaluate() = 0;
+    virtual void copyFrom(const Individual*) = 0;
 
 protected:
     double fitness{ 0 };

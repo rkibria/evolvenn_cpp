@@ -16,8 +16,8 @@ public:
     void setWeights(const std::vector<double>& w) { weights = w; }
 
 private:
-    const size_t nInputs;
-    const std::vector<size_t> layerSizes;
+    size_t nInputs;
+    std::vector<size_t> layerSizes;
     std::vector<double> weights;
 };
 
