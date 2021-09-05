@@ -12,7 +12,7 @@ public:
     virtual void mutate(double spread) = 0;
     virtual void evaluate() = 0;
 
-private:
+protected:
     double fitness{ 0 };
 };
 
