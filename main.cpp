@@ -50,7 +50,7 @@ public:
         return spread * (dist(generator) - spread/2);
     }
 
-    NnIndividual() : nn(1, {8, 8, 8})
+    NnIndividual() : nn(2, {2, 2, 1})
     {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
@@ -65,27 +65,51 @@ public:
     void evaluate() override
     {
         std::vector<double> outputs;
-        for(int i = 0; i < 100; ++i) {
-            const double x = -M_PI + 2 * M_PI / 100 * i;
-            double inputs = x * 10.0;
-            const auto resultIdx = nn.run(&inputs, outputs);
-            double val = 0.0;
-            int inc = 1;
-            for(size_t k =  0; k < 8; ++k) {
-                const auto result = outputs[resultIdx + k];
-                const bool doInc = (result > 0);
-//                std::cout << (doInc ? "1" : "0");
-                val += inc * (doInc ? 1 : 0);
-                inc *= 2;
-            }
-            val = (val - 127) / 255;
-            const auto expect = sin(x);
-            auto diff = val - expect;
-            diff *= diff;
+        double inputsArray[2];
+        auto inputs = &inputsArray[0];
+
+        inputs[0] = -1;
+        inputs[1] = -1;
+        auto resultIdx = nn.run(inputs, outputs);
+        fitness += (outputs[resultIdx] < 0.5) ? 0 : 1;
+
+        inputs[0] = -1;
+        inputs[1] = 1;
+        resultIdx = nn.run(inputs, outputs);
+        fitness += (outputs[resultIdx] > 0.5) ? 0 : 1;
+
+        inputs[0] = 1;
+        inputs[1] = -1;
+        resultIdx = nn.run(inputs, outputs);
+        fitness += (outputs[resultIdx] > 0.5) ? 0 : 1;
+
+        inputs[0] = 1;
+        inputs[1] = 1;
+        resultIdx = nn.run(inputs, outputs);
+        fitness += (outputs[resultIdx] < 0.5) ? 0 : 1;
+
+
+//        for(int i = 0; i < 100; ++i) {
+//            const double x = -M_PI + 2 * M_PI / 100 * i;
+//            double inputs = x * 1.0;
+//            const auto resultIdx = nn.run(&inputs, outputs);
+//            double val = 0.0;
+//            int inc = 1;
+//            for(size_t k =  0; k < 8; ++k) {
+//                const auto result = outputs[resultIdx + k];
+//                const bool doInc = (result > 10);
+//                val += inc * (doInc ? 1 : 0);
+//                inc *= 2;
+//            }
+//            val = (val - 127) / 255;
+//            val = outputs[resultIdx + 0];
+//            const auto expect = sin(x);
+//            auto diff = fabs(val - expect);
+//            diff *= diff;
 //            std::cout << "\nval " << val << " vs real " << expect << " diff " << diff << "\n";
 //            std::cout << diff << " ";
-            fitness += diff;
-        }
+//            fitness += diff;
+//        }
 //        std::cout << "idv fit " <<  std::setprecision(30) << fitness << "\n";
     }
 
