@@ -1,6 +1,8 @@
 #ifndef INDIVIDUAL_H
 #define INDIVIDUAL_H
 
+#include <iostream>
+
 class Individual
 {
 public:
@@ -13,6 +15,8 @@ public:
 
     virtual void mutate(double spread) = 0;
     virtual void mutateFrom(const Individual*, double spread) = 0;
+
+    virtual void dump(std::ostream& os) const {}
 
 protected:
     double fitness{ 0 };

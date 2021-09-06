@@ -114,12 +114,17 @@ public:
         }
     }
 
+    void dump(std::ostream& os) const override
+    {
+        os << nn.getWeights()[0] << "/" << nn.getWeights()[1] << "/" << nn.getWeights()[2];
+    }
+
     NeuralNet nn;
 };
 
 void evolution1()
 {
-    const size_t popSize = 1000;
+    const size_t popSize = 10;
     const double mutationSpread = 1;
     const double mutationHalflife = 100;
     const size_t numGens = 10000;
@@ -138,15 +143,15 @@ void evolution1()
 
         pop.evolve(spread);
 
-        if(generation % 10 == 0) {
+        if(generation % 1 == 0) {
             std::cout << "gen " << generation << ": " << pop.getIndividual(0)->getFitness() << " // spread " << spread << "\n";
 
             double sum = 0;
             for(size_t i = 0; i < pop.size(); ++i) {
-    //            std::cout << i << " fitness " << pop.getIndividual(i)->getFitness() << "\n";
+                std::cout << i << " fitness " << pop.getIndividual(i)->getFitness() << "\n";
                 sum += pop.getIndividual(i)->getFitness();
             }
-            std::cout << "avg " << sum << "\n";
+            std::cout << "avg " << sum / pop.size() << "\n";
         }
 
         ++generation;
