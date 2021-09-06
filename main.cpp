@@ -124,10 +124,10 @@ public:
 
 void evolution1()
 {
-    const size_t popSize = 10;
+    const size_t popSize = 1000;
     const double mutationSpread = 1;
     const double mutationHalflife = 100;
-    const size_t numGens = 10000;
+    const size_t numGens = 1000;
 
     Population pop;
     for(size_t i = 0; i < popSize; ++i) {
@@ -139,19 +139,19 @@ void evolution1()
     size_t generation = 1;
     while(generation < numGens) {
         const double halflifeFactor = 1.0; // TODO this returns inf (mutationHalflife > 0) ? pow(2.0, -(generation % 1000) / mutationHalflife) : 1;
-        const double spread = (1.0 - (generation / static_cast<double>(numGens))) * 0.5; // TODO std::max(mutationSpread * halflifeFactor, mutationSpread * 0.01);
+        const double spread = (1.0 - (generation / static_cast<double>(numGens))) * 0.25; // TODO std::max(mutationSpread * halflifeFactor, mutationSpread * 0.01);
 
         pop.evolve(spread);
 
         if(generation % 1 == 0) {
-            std::cout << "gen " << generation << ": " << pop.getIndividual(0)->getFitness() << " // spread " << spread << "\n";
-
             double sum = 0;
             for(size_t i = 0; i < pop.size(); ++i) {
-                std::cout << i << " fitness " << pop.getIndividual(i)->getFitness() << "\n";
+//                std::cout << i << " fitness " << pop.getIndividual(i)->getFitness() << "\n";
                 sum += pop.getIndividual(i)->getFitness();
             }
-            std::cout << "avg " << sum / pop.size() << "\n";
+            std::cout << "gen " << generation << ": " << pop.getIndividual(0)->getFitness()
+                      << " // spread " << spread
+                      << " // avg " << sum / pop.size() << "\n";
         }
 
         ++generation;
