@@ -37,19 +37,24 @@ void speedTest1()
     std::cout << "Time 1: " << duration.count() << " ms" << std::endl;
 }
 
+std::default_random_engine generator;
+
 class NnIndividual : public Individual
 {
 public:
-    NnIndividual() : nn(1, {8, 8, 8})
+    double getVariation(double spread)
     {
         const double mean = 0.0;
-        const double stddev = 1.0;
-        std::default_random_engine generator;
+        const double stddev = spread;
         std::normal_distribution<double> dist(mean, stddev);
+        return spread * (dist(generator) - spread/2);
+    }
 
+    NnIndividual() : nn(1, {8, 8, 8})
+    {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
-            w = dist(generator);
+            w = getVariation(1.0);
         }
     }
 
@@ -84,20 +89,13 @@ public:
 //        std::cout << "idv fit " <<  std::setprecision(30) << fitness << "\n";
     }
 
-    double getVariation(double spread)
-    {
-        const double mean = 0.0;
-        const double stddev = spread;
-        std::default_random_engine generator;
-        std::normal_distribution<double> dist(mean, stddev);
-        return spread * (dist(generator) - spread/2);
-    }
-
     void mutate(double spread) override
     {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
-            w += getVariation(spread);
+            const auto variation = getVariation(spread);
+//            std::cout << w << " mutate " << variation << " // spread " << spread << "\n";
+            w += variation;
         }
     }
 
@@ -110,7 +108,9 @@ public:
         const auto& otherWeights = otherNn->nn.getWeights();
         auto& weights = nn.getWeights();
         for(size_t i = 0; i < weights.size(); ++i) {
-            weights[i] = otherWeights[i] + getVariation(spread);
+            const auto variation = getVariation(spread);
+//            std::cout << otherWeights[i] << " mutateFrom " << variation << " // spread " << spread << "\n";
+            weights[i] = otherWeights[i] + variation;
         }
     }
 
@@ -122,7 +122,7 @@ void evolution1()
     const size_t popSize = 1000;
     const double mutationSpread = 1;
     const double mutationHalflife = 100;
-    const size_t numGens = 1000;
+    const size_t numGens = 10000;
 
     Population pop;
     for(size_t i = 0; i < popSize; ++i) {
