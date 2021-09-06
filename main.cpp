@@ -3,6 +3,7 @@
 #include <chrono>
 #include <random>
 #include <iomanip>
+#include <cassert>
 
 #include "neuralnet/neuralnet.h"
 #include "population/population.h"
@@ -56,19 +57,6 @@ public:
     {
     }
 
-    void mutate(double spread) override
-    {
-        const double mean = 0.0;
-        const double stddev = 1.0;
-        std::default_random_engine generator;
-        std::normal_distribution<double> dist(mean, stddev);
-
-        auto& weights = nn.getWeights();
-        for(auto& w : weights) {
-            w += spread * (dist(generator) - 0.5);
-        }
-    }
-
     void evaluate() override
     {
         std::vector<double> outputs;
@@ -96,9 +84,34 @@ public:
 //        std::cout << "idv fit " <<  std::setprecision(30) << fitness << "\n";
     }
 
-    void copyFrom(const Individual* other) override
+    double getVariation(double spread)
     {
-        nn = dynamic_cast<const NnIndividual*>(other)->nn;
+        const double mean = 0.0;
+        const double stddev = spread;
+        std::default_random_engine generator;
+        std::normal_distribution<double> dist(mean, stddev);
+        return spread * (dist(generator) - spread/2);
+    }
+
+    void mutate(double spread) override
+    {
+        auto& weights = nn.getWeights();
+        for(auto& w : weights) {
+            w += getVariation(spread);
+        }
+    }
+
+    void mutateFrom(const Individual* other, double spread) override
+    {
+        const auto otherNn = dynamic_cast<const NnIndividual*>(other);
+        assert(this->nn.getInputs() == otherNn->nn.getInputs());
+        assert(this->nn.getLayerSizes() == otherNn->nn.getLayerSizes());
+
+        const auto& otherWeights = otherNn->nn.getWeights();
+        auto& weights = nn.getWeights();
+        for(size_t i = 0; i < weights.size(); ++i) {
+            weights[i] = otherWeights[i] + getVariation(spread);
+        }
     }
 
     NeuralNet nn;
@@ -106,10 +119,10 @@ public:
 
 void evolution1()
 {
-    const size_t popSize = 5000;
+    const size_t popSize = 1000;
     const double mutationSpread = 1;
     const double mutationHalflife = 100;
-    const size_t numGens = 10000;
+    const size_t numGens = 1000;
 
     Population pop;
     for(size_t i = 0; i < popSize; ++i) {
@@ -121,7 +134,7 @@ void evolution1()
     size_t generation = 1;
     while(generation < numGens) {
         const double halflifeFactor = 1.0; // TODO this returns inf (mutationHalflife > 0) ? pow(2.0, -(generation % 1000) / mutationHalflife) : 1;
-        const double spread = (1.0 - (generation / static_cast<double>(numGens))) * 1.0; // TODO std::max(mutationSpread * halflifeFactor, mutationSpread * 0.01);
+        const double spread = (1.0 - (generation / static_cast<double>(numGens))) * 0.5; // TODO std::max(mutationSpread * halflifeFactor, mutationSpread * 0.01);
 
         pop.evolve(spread);
 

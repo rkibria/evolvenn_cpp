@@ -9,9 +9,10 @@ public:
     double getFitness() const { return fitness; }
     void setFitness(double f) { fitness = f; }
 
-    virtual void mutate(double spread) = 0;
     virtual void evaluate() = 0;
-    virtual void copyFrom(const Individual*) = 0;
+
+    virtual void mutate(double spread) = 0;
+    virtual void mutateFrom(const Individual*, double spread) = 0;
 
 protected:
     double fitness{ 0 };

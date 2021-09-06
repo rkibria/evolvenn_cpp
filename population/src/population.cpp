@@ -48,8 +48,7 @@ void Population::evolve(double spread)
         const auto& parent = (*individuals)[i];
         const auto& offspring = (*individuals)[halfSize + i];
 
-        offspring->copyFrom(parent.get());
-        offspring->mutate(spread);
+        offspring->mutateFrom(parent.get(), spread);
         if(i != 0) {
             parent->mutate(spread);
         }
