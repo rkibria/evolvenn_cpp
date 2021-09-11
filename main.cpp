@@ -50,7 +50,7 @@ public:
         return spread * (dist(generator) - spread/2);
     }
 
-    NnIndividual() : nn(2, {2, 2, 1})
+    NnIndividual() : nn(2, {2, 2, 2, 1})
     {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
@@ -151,7 +151,7 @@ void evolution1()
     const size_t popSize = 1000;
     const double mutationSpread = 1;
     const double mutationHalflife = 100;
-    const size_t numGens = 1000;
+    const size_t numGens = 100;
 
     Population pop;
     for(size_t i = 0; i < popSize; ++i) {
