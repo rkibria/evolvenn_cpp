@@ -27,7 +27,7 @@ size_t NeuralNet::run(const double* inputs, std::vector<double>& outputs) const
     auto inputPtr = inputs;
     auto lastInputs = nInputs;
     size_t weightsBegin = 0;
-    size_t outputBegin;
+    size_t outputBegin = 0;
     for(size_t lrIdx = 0; lrIdx < layerSizes.size(); ++lrIdx) {
         const auto lrSz = layerSizes[lrIdx];
         outputBegin = (lrIdx % 2 ) ? maxOutputsSize : 0;
