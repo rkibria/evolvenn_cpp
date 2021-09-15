@@ -39,6 +39,8 @@ void speedTest1()
 
 std::default_random_engine generator;
 
+constexpr size_t xorInputs = 10;
+
 class NnIndividual : public Individual
 {
 public:
@@ -50,7 +52,7 @@ public:
         return spread * (dist(generator) - spread/2);
     }
 
-    NnIndividual() : nn(2, {2, 2, 2, 1})
+    NnIndividual() : nn(xorInputs, {xorInputs, xorInputs, xorInputs, 1})
     {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
@@ -65,52 +67,27 @@ public:
     void evaluate() override
     {
         std::vector<double> outputs;
-        double inputsArray[2];
-        auto inputs = &inputsArray[0];
+        double inputsArray[xorInputs];
+        const auto inputs = &inputsArray[0];
 
-        inputs[0] = -1;
-        inputs[1] = -1;
-        auto resultIdx = nn.run(inputs, outputs);
-        fitness += (outputs[resultIdx] < 0.5) ? 0 : 1;
-
-        inputs[0] = -1;
-        inputs[1] = 1;
-        resultIdx = nn.run(inputs, outputs);
-        fitness += (outputs[resultIdx] > 0.5) ? 0 : 1;
-
-        inputs[0] = 1;
-        inputs[1] = -1;
-        resultIdx = nn.run(inputs, outputs);
-        fitness += (outputs[resultIdx] > 0.5) ? 0 : 1;
-
-        inputs[0] = 1;
-        inputs[1] = 1;
-        resultIdx = nn.run(inputs, outputs);
-        fitness += (outputs[resultIdx] < 0.5) ? 0 : 1;
-
-
-//        for(int i = 0; i < 100; ++i) {
-//            const double x = -M_PI + 2 * M_PI / 100 * i;
-//            double inputs = x * 1.0;
-//            const auto resultIdx = nn.run(&inputs, outputs);
-//            double val = 0.0;
-//            int inc = 1;
-//            for(size_t k =  0; k < 8; ++k) {
-//                const auto result = outputs[resultIdx + k];
-//                const bool doInc = (result > 10);
-//                val += inc * (doInc ? 1 : 0);
-//                inc *= 2;
-//            }
-//            val = (val - 127) / 255;
-//            val = outputs[resultIdx + 0];
-//            const auto expect = sin(x);
-//            auto diff = fabs(val - expect);
-//            diff *= diff;
-//            std::cout << "\nval " << val << " vs real " << expect << " diff " << diff << "\n";
-//            std::cout << diff << " ";
-//            fitness += diff;
-//        }
-//        std::cout << "idv fit " <<  std::setprecision(30) << fitness << "\n";
+        const auto numCombinations = static_cast<size_t>(pow(2, xorInputs));
+        for(size_t i = 0; i < numCombinations; ++i) {
+//            std::cout << "i=" << i << "\n";
+            int numTrueInputs = 0;
+            for(size_t k = 0; k < xorInputs; ++k) {
+                const auto bit = ((i >> k) & 1);
+                inputs[k] = bit ? 1 : -1;
+//                std::cout << "in" << k << " = " << inputs[k] << "\n";
+                numTrueInputs += bit ? 1 : 0;
+            }
+            const auto expected = (numTrueInputs % 2 == 1);
+//            std::cout << "expected " << expected << "\n";
+            const auto resultIdx = nn.run(inputs, outputs);
+            const auto result = (outputs[resultIdx] > 1);
+//            std::cout << "result " << result << "\n";
+            fitness += (expected != result) ? 1 : 0;
+//            std::cout << "fitness " << fitness << "\n";
+        }
     }
 
     void mutate(double spread) override
@@ -151,7 +128,7 @@ void evolution1()
     const size_t popSize = 1000;
     const double mutationSpread = 1;
     const double mutationHalflife = 100;
-    const size_t numGens = 100;
+    const size_t numGens = 1000;
 
     Population pop;
     for(size_t i = 0; i < popSize; ++i) {
