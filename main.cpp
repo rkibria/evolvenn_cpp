@@ -12,7 +12,7 @@
 
 std::default_random_engine generator;
 
-constexpr int sections = 10;
+constexpr int sections = 100;
 
 class NnIndividual : public Individual
 {
@@ -25,7 +25,7 @@ public:
         return spread * (dist(generator) - spread/2);
     }
 
-    NnIndividual() : nn(1, {2, 2, 1}, true)
+    NnIndividual() : nn(1, {8, 8, 1}, true)
     {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
@@ -129,6 +129,7 @@ void evolution1()
     const auto start = std::chrono::high_resolution_clock::now();
 
     size_t generation = 1;
+    NnIndividual best;
     std::vector<double> outputs;
     while(generation < numGens) {
         const double halflifeFactor = 1.0; // TODO this returns inf (mutationHalflife > 0) ? pow(2.0, -(generation % 1000) / mutationHalflife) : 1;
@@ -136,40 +137,42 @@ void evolution1()
 
         pop.evolve(spread);
 
-        if(generation % 1 == 0) {
-            double sum = 0;
-            for(size_t i = 0; i < pop.size(); ++i) {
-//                std::cout << i << " fitness " << pop.getIndividual(i)->getFitness() << "\n";
-                sum += pop.getIndividual(i)->getFitness();
-            }
-            std::cout << "gen " << generation << ": " << pop.getIndividual(0)->getFitness()
-                      << " // spread " << spread
-                      << " // avg " << sum / pop.size()
-                      << " // best " << pop.getIndividual(0)->getFitness()
-                      << "\n";
+        const auto stop = std::chrono::high_resolution_clock::now();
+        const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+        double sum = 0;
+        for(size_t i = 0; i < pop.size(); ++i) {
+            sum += pop.getIndividual(i)->getFitness();
+        }
 
-            const auto& nn = dynamic_cast<NnIndividual*>(pop.getIndividual(0))->nn;
+        const auto& curBest = *(dynamic_cast<NnIndividual*>(pop.getIndividual(0)));
+        std::cout << "gen " << generation << ": best " << curBest.getFitness()
+                    << " // spread " << spread
+                    << " // avg " << sum / pop.size()
+                    << " // time " << duration.count() << " ms" 
+                    << "\n";
+
+        if(generation == 1 || generation == numGens-1 || curBest.getFitness() < best.getFitness()) {
+            std::cout << "drawing\n";
+            best = curBest;
+
             HtmlAnim::Vec2Vector points;
             for(int i = 0; i < sections + 1; ++i) {
                 const double x = -M_PI + 2 * M_PI / sections * i;
                 double inputs = x / M_PI;
-                const auto resultIdx = nn.run(&inputs, outputs);
+                const auto resultIdx = curBest.nn.run(&inputs, outputs);
                 const auto y = outputs[resultIdx];
                 points.emplace_back(HtmlAnim::Vec2(getMapX(x), getMapY(y)));
             }
             anim.frame().save()
-                .text(50, 50, std::to_string(generation))
+                .text(10, 10, std::string("Generation ") + std::to_string(generation))
                 .stroke_style("red")
-                .line(points);
+                .line(points)
+                .wait((generation == numGens-1) ? 180 : 20);
             anim.next_frame();
         }
 
         ++generation;
     }
-
-    const auto stop = std::chrono::high_resolution_clock::now();
-    const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-    std::cout << "Time: " << duration.count() << " ms" << std::endl;
 
     anim.write_file("progress.html");
 }

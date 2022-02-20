@@ -6,7 +6,8 @@
 class NeuralNet
 {
 public:
-    NeuralNet(size_t nInputs, const std::vector<size_t>& layerSizes, bool outputIsLinear=false);
+    NeuralNet() : nInputs{0}, outputLinear{false} {}
+    explicit NeuralNet(size_t nInputs, const std::vector<size_t>& layerSizes, bool outputIsLinear=false);
 
     size_t run(const double* inputs, std::vector<double>& outputs) const;
 
@@ -22,7 +23,7 @@ private:
     size_t nInputs;
     std::vector<size_t> layerSizes;
     std::vector<double> weights;
-    const bool outputLinear;
+    bool outputLinear;
 };
 
 #endif // NEURALNET_H
