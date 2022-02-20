@@ -8,36 +8,11 @@
 #include "neuralnet/neuralnet.h"
 #include "population/population.h"
 
-void speedTest1()
-{
-    NeuralNet nn(2, {2, 3, 2});
-    nn.setWeights({   0, 1, 1,
-                      0, 1, 1,
-
-                      0, 1, 1,
-                      0, 1, 1,
-                      0, 1, 1,
-
-                      0, 1, 1, -1,
-                      0, 1, -1, -1
-                  });
-    std::vector<double> outputs;
-    double inputs[2] = {1.0, 2.0};
-
-    const auto start = std::chrono::high_resolution_clock::now();
-
-    for(size_t i = 0; i < 1000000; ++i) {
-        nn.run(inputs, outputs);
-        inputs[0] += 0.00001;
-    }
-
-    const auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-
-    std::cout << "Time 1: " << duration.count() << " ms" << std::endl;
-}
+#include "htmlanim_shapes.hpp"
 
 std::default_random_engine generator;
+
+constexpr int sections = 10;
 
 class NnIndividual : public Individual
 {
@@ -50,7 +25,7 @@ public:
         return spread * (dist(generator) - spread/2);
     }
 
-    NnIndividual() : nn(2, {2, 2, 2, 1})
+    NnIndividual() : nn(1, {2, 2, 1}, true)
     {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
@@ -65,52 +40,25 @@ public:
     void evaluate() override
     {
         std::vector<double> outputs;
-        double inputsArray[2];
-        auto inputs = &inputsArray[0];
 
-        inputs[0] = -1;
-        inputs[1] = -1;
-        auto resultIdx = nn.run(inputs, outputs);
-        fitness += (outputs[resultIdx] < 0.5) ? 0 : 1;
+        // Map: [-PI,PI] -> [-1,1]
+        for(int i = 0; i < sections + 1; ++i) {
+            const double x = -M_PI + 2 * M_PI / sections * i;
+            const auto expect = sin(x);
 
-        inputs[0] = -1;
-        inputs[1] = 1;
-        resultIdx = nn.run(inputs, outputs);
-        fitness += (outputs[resultIdx] > 0.5) ? 0 : 1;
+            double inputs = x / M_PI;
 
-        inputs[0] = 1;
-        inputs[1] = -1;
-        resultIdx = nn.run(inputs, outputs);
-        fitness += (outputs[resultIdx] > 0.5) ? 0 : 1;
+            const auto resultIdx = nn.run(&inputs, outputs);
 
-        inputs[0] = 1;
-        inputs[1] = 1;
-        resultIdx = nn.run(inputs, outputs);
-        fitness += (outputs[resultIdx] < 0.5) ? 0 : 1;
+            const auto actual = outputs[resultIdx];
 
-
-//        for(int i = 0; i < 100; ++i) {
-//            const double x = -M_PI + 2 * M_PI / 100 * i;
-//            double inputs = x * 1.0;
-//            const auto resultIdx = nn.run(&inputs, outputs);
-//            double val = 0.0;
-//            int inc = 1;
-//            for(size_t k =  0; k < 8; ++k) {
-//                const auto result = outputs[resultIdx + k];
-//                const bool doInc = (result > 10);
-//                val += inc * (doInc ? 1 : 0);
-//                inc *= 2;
-//            }
-//            val = (val - 127) / 255;
-//            val = outputs[resultIdx + 0];
-//            const auto expect = sin(x);
-//            auto diff = fabs(val - expect);
-//            diff *= diff;
-//            std::cout << "\nval " << val << " vs real " << expect << " diff " << diff << "\n";
-//            std::cout << diff << " ";
-//            fitness += diff;
-//        }
-//        std::cout << "idv fit " <<  std::setprecision(30) << fitness << "\n";
+            auto diff = fabs(actual - expect);
+            const auto diffsq = diff * diff;
+            fitness += diffsq;
+            // std::cout << i << ") x " << x << " exp " << expect << " act " << actual 
+            //     << " dsq " << diffsq << " fit " << fitness;
+            // std::cout << "\n";
+        }
     }
 
     void mutate(double spread) override
@@ -118,7 +66,6 @@ public:
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
             const auto variation = getVariation(spread);
-//            std::cout << w << " mutate " << variation << " // spread " << spread << "\n";
             w += variation;
         }
     }
@@ -133,7 +80,6 @@ public:
         auto& weights = nn.getWeights();
         for(size_t i = 0; i < weights.size(); ++i) {
             const auto variation = getVariation(spread);
-//            std::cout << otherWeights[i] << " mutateFrom " << variation << " // spread " << spread << "\n";
             weights[i] = otherWeights[i] + variation;
         }
     }
@@ -148,6 +94,35 @@ public:
 
 void evolution1()
 {
+    HtmlAnim::HtmlAnim anim("sinus evolution progress");
+    const int outW = 500, outH = 300;
+    anim.frame().save().stroke_style("gray")
+        .line(0,outH/2, outW,outH/2)
+        .line(outW/2,0, outW/2,outH);
+    anim.add_layer();
+
+    // Map: [-PI,PI] -> [-1,1]
+    double lastX, lastY;
+
+    const auto getMapX = [outW](double x) { return outW/2 + x / M_PI * outW/2; };
+    const auto getMapY = [outH](double y) { return outH/2 - y * outH/2; };
+
+    for(int i = 0; i < sections + 1; ++i) {
+        const double x = -M_PI + 2 * M_PI / sections * i;
+        const auto expect = sin(x);
+        if(i>0) {
+            const double x1 = getMapX(lastX);
+            const double y1 = getMapY(lastY);
+            const double x2 = getMapX(x);
+            const double y2 = getMapY(expect);
+            anim.frame().line(x1, y1, x2, y2);
+        }
+        lastX = x;
+        lastY = expect;
+    }
+    anim.write_file("progress.html");
+    return;
+
     const size_t popSize = 1000;
     const double mutationSpread = 1;
     const double mutationHalflife = 100;
@@ -175,7 +150,9 @@ void evolution1()
             }
             std::cout << "gen " << generation << ": " << pop.getIndividual(0)->getFitness()
                       << " // spread " << spread
-                      << " // avg " << sum / pop.size() << "\n";
+                      << " // avg " << sum / pop.size()
+                      << " // best " << pop.getIndividual(0)->getFitness()
+                      << "\n";
         }
 
         ++generation;
@@ -188,7 +165,6 @@ void evolution1()
 
 int main(int argc, char **argv)
 {
-//    speedTest1();
     evolution1();
 
     return 0;

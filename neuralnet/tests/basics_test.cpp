@@ -83,3 +83,16 @@ TEST_CASE( "Activation is applied correctly", "[neuralnet]" ) {
     REQUIRE(outputs[0] == 6);
     REQUIRE(outputs[1] == 0);
 }
+
+TEST_CASE( "1-dimensional function, 1 hidden layer", "[neuralnet]" ) {
+    NeuralNet nn(1, {2, 1});
+    nn.setWeights({   1, 2,
+                      3, 4,
+
+                      5, 6, 7
+                  });
+    std::vector<double> outputs;
+    const double inputs[1] = {1.0};
+    const auto result = nn.run(inputs, outputs);
+    REQUIRE(outputs[result] == 72);
+}
