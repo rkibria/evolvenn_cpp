@@ -3,9 +3,10 @@
 #include <cassert>
 #include <algorithm>
 
-NeuralNet::NeuralNet(size_t nInputs_, const std::vector<size_t>& layerSizes_)
+NeuralNet::NeuralNet(size_t nInputs_, const std::vector<size_t>& layerSizes_, bool outputIsLinear)
     : nInputs{ nInputs_ },
-      layerSizes{ layerSizes_ }
+      layerSizes{ layerSizes_ },
+      outputLinear{ outputIsLinear }
 {
     size_t nWeights = 0;
     auto lastInputs = nInputs;
@@ -32,13 +33,15 @@ size_t NeuralNet::run(const double* inputs, std::vector<double>& outputs) const
         const auto lrSz = layerSizes[lrIdx];
         outputBegin = (lrIdx % 2 ) ? maxOutputsSize : 0;
 
+        const bool isOutputLayer = (lrIdx == layerSizes.size() - 1);
+        const bool linearOutput = isOutputLayer && outputLinear;
         for(size_t neuIdx = 0; neuIdx < lrSz; ++neuIdx) {
             auto weightedInputs = weights[weightsBegin++];
             for(size_t w = 0; w < lastInputs; ++w) {
                 weightedInputs += weights[weightsBegin++] * (*(inputPtr + w));
             }
             // https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
-            const auto activation = std::max(0.0, weightedInputs);
+            const auto activation = linearOutput ? weightedInputs : std::max(0.0, weightedInputs);
             outputs[outputBegin + neuIdx] = activation;
         }
 

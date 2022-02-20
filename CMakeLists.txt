@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Boost)
-find_package(TBB)
+# find_package(TBB)
 
 add_subdirectory(neuralnet)
 add_subdirectory(population)
@@ -24,6 +24,6 @@ target_link_libraries(evolvenn
     neuralnet
     population
     Boost::boost
-    Boost::serialization
-    TBB::tbb
+    # Boost::serialization
+    # TBB::tbb
     )
