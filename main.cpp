@@ -14,6 +14,39 @@ std::default_random_engine generator;
 
 constexpr int sections = 100;
 
+const static std::vector<std::string> CSS_COLOR_NAMES = {
+    "AliceBlue","AntiqueWhite","Aqua","Aquamarine","Azure","Beige","Bisque"
+    ,"BlanchedAlmond","Blue","BlueViolet","Brown","BurlyWood","CadetBlue","Chartreuse","Chocolate"
+    ,"Coral","CornflowerBlue","Cornsilk","Crimson","Cyan","DarkBlue","DarkCyan","DarkGoldenRod",
+    "DarkGray","DarkGrey","DarkGreen","DarkKhaki","DarkMagenta","DarkOliveGreen","Darkorange",
+    "DarkOrchid","DarkRed","DarkSalmon","DarkSeaGreen","DarkSlateBlue","DarkSlateGray",
+    "DarkSlateGrey","DarkTurquoise","DarkViolet","DeepPink","DeepSkyBlue","DimGray","DimGrey",
+    "DodgerBlue","FireBrick","FloralWhite","ForestGreen","Fuchsia","Gainsboro","GhostWhite","Gold"
+    ,"GoldenRod","Gray","Grey","Green","GreenYellow","HoneyDew","HotPink","IndianRed","Indigo",
+    "Ivory","Khaki","Lavender","LavenderBlush","LawnGreen","LemonChiffon","LightBlue","LightCoral"
+    ,"LightCyan","LightGoldenRodYellow","LightGray","LightGrey","LightGreen","LightPink",
+    "LightSalmon","LightSeaGreen","LightSkyBlue","LightSlateGray","LightSlateGrey",
+    "LightSteelBlue","LightYellow","Lime","LimeGreen","Linen","Magenta","Maroon",
+    "MediumAquaMarine","MediumBlue","MediumOrchid","MediumPurple","MediumSeaGreen",
+    "MediumSlateBlue","MediumSpringGreen","MediumTurquoise","MediumVioletRed","MidnightBlue",
+    "MintCream","MistyRose","Moccasin","NavajoWhite","Navy","OldLace","Olive","OliveDrab","Orange"
+    ,"OrangeRed","Orchid","PaleGoldenRod","PaleGreen","PaleTurquoise","PaleVioletRed","PapayaWhip"
+    ,"PeachPuff","Peru","Pink","Plum","PowderBlue","Purple","Red","RosyBrown","RoyalBlue",
+    "SaddleBrown","Salmon","SandyBrown","SeaGreen","SeaShell","Sienna","Silver","SkyBlue",
+    "SlateBlue","SlateGray","SlateGrey","Snow","SpringGreen","SteelBlue","Tan","Teal","Thistle",
+    "Tomato","Turquoise","Violet","Wheat","White","WhiteSmoke","Yellow","YellowGreen" };
+
+const std::string& getColorName(int i)
+{
+    return CSS_COLOR_NAMES[static_cast<size_t>(i) % CSS_COLOR_NAMES.size()];
+}
+
+double getGaussianRand0(double mean, double stddev)
+{
+    std::normal_distribution<double> dist(mean, stddev);
+    return dist(generator);
+}
+
 class NnIndividual : public Individual
 {
 public:
@@ -91,6 +124,47 @@ public:
 
     NeuralNet nn;
 };
+
+void converging1()
+{
+    const int outW = 500;
+    const auto getMapX = [outW](double x) { return outW/2 + x * outW/2; };
+    const auto getMapY = [outW](double y) { return outW/2 - y * outW/2; };
+
+    HtmlAnim::HtmlAnim anim("converging", outW, outW);
+    anim.frame().save()
+        .add_drawable(HtmlAnimShapes::subdivided_grid(0,0, outW/2,outW/2, 2,2, 2,2))
+        .line_width(3)
+        .line(0,outW/2, outW,outW/2)
+        .line(outW/2,0, outW/2,outW);
+    anim.add_layer();
+
+    NeuralNet nn(1, {1}, true);
+
+    std::vector<double> outputs;
+    const double radius = 1.0;
+    const int sections = 2;
+    for(int k = 0; k < 500; ++k) {
+        auto& weights = nn.getWeights();
+        for(auto& w : weights) {
+            w = getGaussianRand0(0, 1);
+        }
+
+        HtmlAnim::Vec2Vector points;
+        for(int i = 0; i < sections + 1; ++i) {
+            const double x = -radius + 2 * radius / sections * i;
+            const double inputs = x / radius; // map input to -1, 1 range
+            const auto resultIdx = nn.run(&inputs, outputs);
+            const auto actual = outputs[resultIdx];
+            points.emplace_back(HtmlAnim::Vec2(getMapX(x), getMapY(actual)));
+        }
+        anim.frame().save()
+            .stroke_style(getColorName(k))
+            .line(points);
+    }
+
+    anim.write_file("first_gen_nets.html");
+}
 
 void evolution1()
 {
@@ -179,7 +253,9 @@ void evolution1()
 
 int main(int argc, char **argv)
 {
-    evolution1();
+    // evolution1();
+
+    converging1();
 
     return 0;
 }
