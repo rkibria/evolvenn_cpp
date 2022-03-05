@@ -41,7 +41,7 @@ const std::string& getColorName(int i)
     return CSS_COLOR_NAMES[static_cast<size_t>(i) % CSS_COLOR_NAMES.size()];
 }
 
-double getGaussianRand0(double mean, double stddev)
+double getGaussianRand(double mean, double stddev)
 {
     std::normal_distribution<double> dist(mean, stddev);
     return dist(generator);
@@ -50,19 +50,11 @@ double getGaussianRand0(double mean, double stddev)
 class NnIndividual : public Individual
 {
 public:
-    double getVariation(double spread)
-    {
-        const double mean = 0.0;
-        const double stddev = spread;
-        std::normal_distribution<double> dist(mean, stddev);
-        return spread * (dist(generator) - spread/2);
-    }
-
     NnIndividual() : nn(1, {8, 8, 1}, true)
     {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
-            w = getVariation(1.0);
+            w = getGaussianRand(0, 1.0);
         }
     }
 
@@ -98,7 +90,7 @@ public:
     {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
-            const auto variation = getVariation(spread);
+            const auto variation = getGaussianRand(0, spread);
             w += variation;
         }
     }
@@ -112,7 +104,7 @@ public:
         const auto& otherWeights = otherNn->nn.getWeights();
         auto& weights = nn.getWeights();
         for(size_t i = 0; i < weights.size(); ++i) {
-            const auto variation = getVariation(spread);
+            const auto variation = getGaussianRand(0, spread);
             weights[i] = otherWeights[i] + variation;
         }
     }
@@ -146,14 +138,14 @@ void converging1()
     const auto initNn = [&nn]() {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
-            w = getGaussianRand0(0, 1);
+            w = getGaussianRand(0, 1);
         }
     };
 
     const auto mutateNn = [&nn](double stddev) {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
-            w = getGaussianRand0(0, stddev);
+            w = getGaussianRand(0, stddev);
         }
     };
 
@@ -211,7 +203,7 @@ void evolution1()
     const size_t popSize = 1000;
     const double mutationSpread = 1;
     const double mutationHalflife = 100;
-    const size_t numGens = 100;
+    const size_t numGens = 5000;
 
     Population pop;
     for(size_t i = 0; i < popSize; ++i) {
@@ -223,9 +215,10 @@ void evolution1()
     size_t generation = 1;
     NnIndividual best;
     std::vector<double> outputs;
-    while(generation < numGens) {
-        const double halflifeFactor = 1.0; // TODO this returns inf (mutationHalflife > 0) ? pow(2.0, -(generation % 1000) / mutationHalflife) : 1;
-        const double spread = (1.0 - (generation / static_cast<double>(numGens))) * 0.25; // TODO std::max(mutationSpread * halflifeFactor, mutationSpread * 0.01);
+    // while(generation < numGens) {
+    do {
+        // const double spread = (1.0 - (generation / static_cast<double>(numGens + 1))) * 0.05;
+        const double spread = 1.0 / generation;
 
         pop.evolve(spread);
 
@@ -264,16 +257,17 @@ void evolution1()
         }
 
         ++generation;
-    }
+    } while(best.getFitness() > 0.0147 && generation < 10000);
 
     anim.write_file("progress.html");
 }
 
 int main(int argc, char **argv)
 {
-    // evolution1();
+    generator.seed(time(nullptr));
 
-    converging1();
+    // converging1();
+    evolution1();
 
     return 0;
 }
