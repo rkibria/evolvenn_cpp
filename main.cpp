@@ -133,13 +133,15 @@ void converging1()
 
     HtmlAnim::HtmlAnim anim("converging", outW, outW);
     anim.frame().save()
+        .fill_style("black").rect(0, 0, outW, outW, true)
         .add_drawable(HtmlAnimShapes::subdivided_grid(0,0, outW/2,outW/2, 2,2, 2,2))
+        .stroke_style("white")
         .line_width(3)
         .line(0,outW/2, outW,outW/2)
         .line(outW/2,0, outW/2,outW);
     anim.add_layer();
 
-    NeuralNet nn(1, {1}, true);
+    NeuralNet nn(1, {1}, false);
 
     const auto initNn = [&nn]() {
         auto& weights = nn.getWeights();
@@ -155,14 +157,16 @@ void converging1()
         }
     };
 
-    initNn();
+
+    // initNn();
 
     std::vector<double> outputs;
     const double radius = 1.0;
-    const int sections = 2;
-    for(int k = 0; k < 500; ++k) {
+    const int sections = 100;
+    for(int k = 0; k < 10; ++k) {
 
-        mutateNn(1);
+        initNn();
+        // mutateNn(1);
 
         HtmlAnim::Vec2Vector points;
         for(int i = 0; i < sections + 1; ++i) {
