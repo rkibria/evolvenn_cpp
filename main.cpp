@@ -10,6 +10,12 @@
 
 #include "htmlanim_shapes.hpp"
 
+double targetFunction(double x)
+{
+    return sin(x);
+    // return x == 0 ? 0 : (0.3 * x * sin(30 / x));
+}
+
 std::default_random_engine generator;
 
 std::uniform_int_distribution<> coinDistrib(0, 1);
@@ -77,7 +83,7 @@ public:
         // Map: [-PI,PI] -> [-1,1]
         for(int i = 0; i < sections + 1; ++i) {
             const double x = -M_PI + 2 * M_PI / sections * i;
-            const auto expect = sin(x);
+            const auto expect = targetFunction(x);
 
             double inputs = x / M_PI;
 
@@ -183,15 +189,15 @@ void converging1()
 
 void evolution1()
 {
-    HtmlAnim::HtmlAnim anim("sinus evolution progress");
+    HtmlAnim::HtmlAnim anim("Evolution progress");
     const int outW = 500, outH = 300;
     const auto getMapX = [outW](double x) { return outW/2 + x / M_PI * outW/2; };
-    const auto getMapY = [outH](double y) { return outH/2 - y * outH/2; };
+    const auto getMapY = [outH](double y) { return outH/2 - y * outH/2 * 0.9; };
     {
         HtmlAnim::Vec2Vector points;
         for(int i = 0; i < sections + 1; ++i) {
             const double x = -M_PI + 2 * M_PI / sections * i;
-            const auto y = sin(x);
+            const auto y = targetFunction(x);
             points.emplace_back(HtmlAnim::Vec2(getMapX(x), getMapY(y)));
         }
         anim.frame().save()
@@ -234,7 +240,7 @@ void evolution1()
         anim.next_frame();
     };
 
-    const size_t numGens = 10000;
+    const size_t numGens = 2000;
     int numBests = 0;
     do {
         pop.evolve(0);
