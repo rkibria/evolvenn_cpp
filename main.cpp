@@ -141,14 +141,28 @@ void converging1()
 
     NeuralNet nn(1, {1}, true);
 
-    std::vector<double> outputs;
-    const double radius = 1.0;
-    const int sections = 2;
-    for(int k = 0; k < 500; ++k) {
+    const auto initNn = [&nn]() {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
             w = getGaussianRand0(0, 1);
         }
+    };
+
+    const auto mutateNn = [&nn](double stddev) {
+        auto& weights = nn.getWeights();
+        for(auto& w : weights) {
+            w = getGaussianRand0(0, stddev);
+        }
+    };
+
+    initNn();
+
+    std::vector<double> outputs;
+    const double radius = 1.0;
+    const int sections = 2;
+    for(int k = 0; k < 500; ++k) {
+
+        mutateNn(1);
 
         HtmlAnim::Vec2Vector points;
         for(int i = 0; i < sections + 1; ++i) {
