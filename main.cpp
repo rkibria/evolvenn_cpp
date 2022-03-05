@@ -54,10 +54,11 @@ const std::string& getColorName(int i)
     return CSS_COLOR_NAMES[static_cast<size_t>(i) % CSS_COLOR_NAMES.size()];
 }
 
+const double startStddev = 0.25;
 class NnIndividual : public Individual
 {
 public:
-    NnIndividual() : nn(1, {8, 8, 1}, true), stddev{ 0.25 }
+    NnIndividual() : nn(1, {8, 8, 1}, true), stddev{ startStddev }
     {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
@@ -87,9 +88,6 @@ public:
             auto diff = fabs(actual - expect);
             const auto diffsq = diff * diff;
             fitness += diffsq;
-            // std::cout << i << ") x " << x << " exp " << expect << " act " << actual 
-            //     << " dsq " << diffsq << " fit " << fitness;
-            // std::cout << "\n";
         }
     }
 
@@ -100,7 +98,8 @@ public:
             const auto variation = getGaussianRand(0, stddev);
             w += variation;
         }
-        stddev *= getCointoss() ? 0.9 : 1.1;
+        stddev *= getCointoss() ? 0.8 : 1.2;
+        stddev = std::max(0.001, stddev);
     }
 
     void mutateFrom(const Individual* other, double) override
@@ -235,7 +234,7 @@ void evolution1()
         anim.next_frame();
     };
 
-    const size_t numGens = 2000;
+    const size_t numGens = 10000;
     int numBests = 0;
     do {
         pop.evolve(0);
