@@ -12,6 +12,19 @@
 
 std::default_random_engine generator;
 
+std::uniform_int_distribution<> coinDistrib(0, 1);
+
+double getGaussianRand(double mean, double stddev)
+{
+    std::normal_distribution<double> dist(mean, stddev);
+    return dist(generator);
+}
+
+int getCointoss()
+{
+    return coinDistrib(generator);
+}
+
 constexpr int sections = 100;
 
 const static std::vector<std::string> CSS_COLOR_NAMES = {
@@ -41,16 +54,10 @@ const std::string& getColorName(int i)
     return CSS_COLOR_NAMES[static_cast<size_t>(i) % CSS_COLOR_NAMES.size()];
 }
 
-double getGaussianRand(double mean, double stddev)
-{
-    std::normal_distribution<double> dist(mean, stddev);
-    return dist(generator);
-}
-
 class NnIndividual : public Individual
 {
 public:
-    NnIndividual() : nn(1, {8, 8, 1}, true)
+    NnIndividual() : nn(1, {8, 8, 1}, true), stddev{ 0.25 }
     {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
@@ -86,27 +93,25 @@ public:
         }
     }
 
-    void mutate(double spread) override
+    void mutate(double) override
     {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
-            const auto variation = getGaussianRand(0, spread);
+            const auto variation = getGaussianRand(0, stddev);
             w += variation;
         }
+        stddev *= getCointoss() ? 0.9 : 1.1;
     }
 
-    void mutateFrom(const Individual* other, double spread) override
+    void mutateFrom(const Individual* other, double) override
     {
         const auto otherNn = dynamic_cast<const NnIndividual*>(other);
         assert(this->nn.getInputs() == otherNn->nn.getInputs());
         assert(this->nn.getLayerSizes() == otherNn->nn.getLayerSizes());
 
-        const auto& otherWeights = otherNn->nn.getWeights();
-        auto& weights = nn.getWeights();
-        for(size_t i = 0; i < weights.size(); ++i) {
-            const auto variation = getGaussianRand(0, spread);
-            weights[i] = otherWeights[i] + variation;
-        }
+        stddev = otherNn->stddev;
+        nn = otherNn->nn;
+        mutate(0);
     }
 
     void dump(std::ostream& os) const override
@@ -115,6 +120,7 @@ public:
     }
 
     NeuralNet nn;
+    double stddev{0};
 };
 
 void converging1()
@@ -200,12 +206,8 @@ void evolution1()
     }
     anim.add_layer();
 
-    const size_t popSize = 1000;
-    const double mutationSpread = 1;
-    const double mutationHalflife = 100;
-    const size_t numGens = 5000;
-
     Population pop;
+    const size_t popSize = 1000;
     for(size_t i = 0; i < popSize; ++i) {
         pop.addIndividual(std::make_unique<NnIndividual>());
     }
@@ -215,49 +217,49 @@ void evolution1()
     size_t generation = 1;
     NnIndividual best;
     std::vector<double> outputs;
-    // while(generation < numGens) {
+
+    const auto drawBest = [&anim, &best, &outputs, &getMapX, &getMapY](size_t generation, int waits) {
+        HtmlAnim::Vec2Vector points;
+        for(int i = 0; i < sections + 1; ++i) {
+            const double x = -M_PI + 2 * M_PI / sections * i;
+            double inputs = x / M_PI;
+            const auto resultIdx = best.nn.run(&inputs, outputs);
+            const auto y = outputs[resultIdx];
+            points.emplace_back(HtmlAnim::Vec2(getMapX(x), getMapY(y)));
+        }
+        anim.frame().save()
+            .text(10, 10, std::string("Generation ") + std::to_string(generation))
+            .stroke_style("red")
+            .line(points)
+            .wait(waits);
+        anim.next_frame();
+    };
+
+    const size_t numGens = 2000;
+    int numBests = 0;
     do {
-        // const double spread = (1.0 - (generation / static_cast<double>(numGens + 1))) * 0.05;
-        const double spread = 1.0 / generation;
-
-        pop.evolve(spread);
-
-        const auto stop = std::chrono::high_resolution_clock::now();
-        const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-        double sum = 0;
-        for(size_t i = 0; i < pop.size(); ++i) {
-            sum += pop.getIndividual(i)->getFitness();
+        pop.evolve(0);
+        const auto& curBest = *(dynamic_cast<NnIndividual*>(pop.getIndividual(0)));
+        if(generation == 1 || curBest.getFitness() < best.getFitness()) {
+            best = curBest;
+            ++numBests;
         }
 
-        const auto& curBest = *(dynamic_cast<NnIndividual*>(pop.getIndividual(0)));
-        std::cout << "gen " << generation << ": best " << curBest.getFitness()
-                    << " // spread " << spread
-                    << " // avg " << sum / pop.size()
-                    << " // time " << duration.count() << " ms" 
-                    << "\n";
-
-        if(generation == 1 || generation == numGens-1 || curBest.getFitness() < best.getFitness()) {
-            std::cout << "drawing\n";
-            best = curBest;
-
-            HtmlAnim::Vec2Vector points;
-            for(int i = 0; i < sections + 1; ++i) {
-                const double x = -M_PI + 2 * M_PI / sections * i;
-                double inputs = x / M_PI;
-                const auto resultIdx = curBest.nn.run(&inputs, outputs);
-                const auto y = outputs[resultIdx];
-                points.emplace_back(HtmlAnim::Vec2(getMapX(x), getMapY(y)));
-            }
-            anim.frame().save()
-                .text(10, 10, std::string("Generation ") + std::to_string(generation))
-                .stroke_style("red")
-                .line(points)
-                .wait((generation == numGens-1) ? 180 : 20);
-            anim.next_frame();
+        if(generation % 100 == 0) {
+            const auto stop = std::chrono::high_resolution_clock::now();
+            const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            std::cout << "gen " << generation << ": best " << best.getFitness()
+                        << " // #improves " << numBests
+                        << " // time " << duration.count() << " ms" 
+                        << "\n";
+            drawBest(generation, 10);
+            numBests = 0;
         }
 
         ++generation;
-    } while(best.getFitness() > 0.0147 && generation < 10000);
+    } while(best.getFitness() > 0.01 && generation < numGens);
+
+    drawBest(generation, 180);
 
     anim.write_file("progress.html");
 }
