@@ -97,7 +97,7 @@ public:
         }
     }
 
-    void mutate(double) override
+    void mutate() override
     {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
@@ -108,7 +108,7 @@ public:
         stddev = std::max(0.001, stddev);
     }
 
-    void mutateFrom(const Individual* other, double) override
+    void mutateFrom(const Individual* other) override
     {
         const auto otherNn = dynamic_cast<const NnIndividual*>(other);
         assert(this->nn.getInputs() == otherNn->nn.getInputs());
@@ -116,7 +116,7 @@ public:
 
         stddev = otherNn->stddev;
         nn = otherNn->nn;
-        mutate(0);
+        mutate();
     }
 
     void dump(std::ostream& os) const override
@@ -243,7 +243,7 @@ void evolution1()
     const size_t numGens = 2000;
     int numBests = 0;
     do {
-        pop.evolve(0);
+        pop.evolve();
         const auto& curBest = *(dynamic_cast<NnIndividual*>(pop.getIndividual(0)));
         if(generation == 1 || curBest.getFitness() < best.getFitness()) {
             best = curBest;
