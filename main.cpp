@@ -10,28 +10,13 @@
 
 #include "htmlanim_shapes.hpp"
 
-double targetFunction(double x)
-{
-    return sin(x);
-    // return x == 0 ? 0 : (0.3 * x * sin(30 / x));
-}
-
 std::default_random_engine generator;
-
-std::uniform_int_distribution<> coinDistrib(0, 1);
 
 double getGaussianRand(double mean, double stddev)
 {
     std::normal_distribution<double> dist(mean, stddev);
     return dist(generator);
 }
-
-int getCointoss()
-{
-    return coinDistrib(generator);
-}
-
-constexpr int sections = 100;
 
 const static std::vector<std::string> CSS_COLOR_NAMES = {
     "AliceBlue","AntiqueWhite","Aqua","Aquamarine","Azure","Beige","Bisque"
@@ -60,11 +45,17 @@ const std::string& getColorName(int i)
     return CSS_COLOR_NAMES[static_cast<size_t>(i) % CSS_COLOR_NAMES.size()];
 }
 
-const double startStddev = 0.25;
+constexpr int sections = 100;
+double targetFunction(double x)
+{
+    return sin(x);
+    // return x == 0 ? 0 : (0.3 * x * sin(30 / x));
+}
+
 class NnIndividual : public Individual
 {
 public:
-    NnIndividual() : nn(1, {8, 8, 1}, true), stddev{ startStddev }
+    NnIndividual() : nn(1, {8, 8, 1}, true), stddev{ 0.25 }
     {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
@@ -104,7 +95,8 @@ public:
             const auto variation = getGaussianRand(0, stddev);
             w += variation;
         }
-        stddev *= getCointoss() ? 0.8 : 1.2;
+        std::uniform_real_distribution<> dis(0.8, 1.2);
+        stddev *= dis(generator);
         stddev = std::max(0.001, stddev);
     }
 
@@ -250,7 +242,7 @@ void evolution1()
             ++numBests;
         }
 
-        if(generation % 100 == 0) {
+        if(generation == 1 || generation % 100 == 0) {
             const auto stop = std::chrono::high_resolution_clock::now();
             const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
             std::cout << "gen " << generation << ": best " << best.getFitness()
@@ -262,7 +254,7 @@ void evolution1()
         }
 
         ++generation;
-    } while(best.getFitness() > 0.01 && generation < numGens);
+    } while(generation < numGens);
 
     drawBest(generation, 180);
 
