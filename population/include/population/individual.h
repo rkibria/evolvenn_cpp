@@ -13,8 +13,8 @@ public:
 
     virtual void evaluate() = 0;
 
-    virtual void mutate(double spread) = 0;
-    virtual void mutateFrom(const Individual*, double spread) = 0;
+    virtual void mutate() = 0;
+    virtual void mutateFrom(const Individual*) = 0;
 
     virtual void dump(std::ostream& os) const {}
 

@@ -27,7 +27,7 @@ void Population::addIndividual(std::unique_ptr<Individual>&& idv)
     individuals->emplace_back(std::move(idv));
 }
 
-void Population::evolve(double spread)
+void Population::evolve()
 {
     if(!isFirstGeneration) {
         const auto halfSize = individuals->size() / 2;
@@ -35,9 +35,9 @@ void Population::evolve(double spread)
             const auto& parent = (*individuals)[i];
             const auto& offspring = (*individuals)[halfSize + i];
 
-            offspring->mutateFrom(parent.get(), spread);
+            offspring->mutateFrom(parent.get());
             if(i != 0) {
-                parent->mutate(spread);
+                parent->mutate();
             }
         }
     }

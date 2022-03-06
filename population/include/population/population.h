@@ -22,7 +22,7 @@ public:
     Individual* getIndividual(size_t i) const;
     void addIndividual(std::unique_ptr<Individual>&& idv);
 
-    void evolve(double spread);
+    void evolve();
 
 private:
     std::unique_ptr<PopulationVector> individuals;
