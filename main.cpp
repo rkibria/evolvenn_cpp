@@ -231,6 +231,8 @@ void evolution1()
             points.emplace_back(HtmlAnim::Vec2(mapX, getMapY(0, y)));
             points0.emplace_back(HtmlAnim::Vec2(mapX, getMapY(1, allOutputs[0][0])));
         }
+
+        const auto& weights = best.nn.getWeights();
         anim.frame()
             .surface(0)
             .save()
@@ -246,6 +248,8 @@ void evolution1()
             .text(10, 10, std::string("Generation ") + std::to_string(generation))
             .stroke_style("red")
             .line(points)
+            .text(50, 20,  std::string("L1: relu(") + std::to_string(weights[0]) + " + IN * " + std::to_string(weights[1]) + ")")
+            .text(50, 40, std::string("O1: ") + std::to_string(weights[2]) + " + IN * " + std::to_string(weights[3]))
             .wait(waits);
         anim.next_frame();
     };
@@ -260,16 +264,16 @@ void evolution1()
             ++numBests;
         }
 
-        if(generation == 1 || generation % 10 == 0) {
-            const auto stop = std::chrono::high_resolution_clock::now();
-            const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-            std::cout << "gen " << generation << ": best " << best.getFitness()
-                        << " // #improves " << numBests
-                        << " // time " << duration.count() << " ms" 
-                        << "\n";
-            drawBest(generation, 10);
-            numBests = 0;
-        }
+        // if(generation == 1 || generation % 100 == 0) {
+        //     const auto stop = std::chrono::high_resolution_clock::now();
+        //     const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+        //     std::cout << "gen " << generation << ": best " << best.getFitness()
+        //                 << " // #improves " << numBests
+        //                 << " // time " << duration.count() << " ms" 
+        //                 << "\n";
+        //     drawBest(generation, 180);
+        //     numBests = 0;
+        // }
 
         ++generation;
     } while(generation < numGens);
