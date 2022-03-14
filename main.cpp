@@ -55,7 +55,7 @@ double targetFunction(double x)
 class NnIndividual : public Individual
 {
 public:
-    NnIndividual() : nn(1, {1, 1}, true), stddev{ 0.25 }
+    NnIndividual() : nn(1, {2, 1}, true), stddev{ 0.25 }
     {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
@@ -220,7 +220,7 @@ void evolution1()
     std::vector<double> outputs;
 
     const auto drawBest = [&anim, &best, &outputs, &getMapX, &getMapY, outW, outH](size_t generation, int waits) {
-        HtmlAnim::Vec2Vector points, points0;
+        HtmlAnim::Vec2Vector points, points0, points1;
         std::vector<std::vector<double>> allOutputs;
         for(int i = 0; i < sections + 1; ++i) {
             const double x = -M_PI + 2 * M_PI / sections * i;
@@ -230,6 +230,7 @@ void evolution1()
             const auto mapX = getMapX(x);
             points.emplace_back(HtmlAnim::Vec2(mapX, getMapY(0, y)));
             points0.emplace_back(HtmlAnim::Vec2(mapX, getMapY(1, allOutputs[0][0])));
+            points1.emplace_back(HtmlAnim::Vec2(mapX, getMapY(1, allOutputs[0][1])));
         }
 
         const auto& weights = best.nn.getWeights();
@@ -242,16 +243,20 @@ void evolution1()
             .line(outW/2,outH, outW/2,2*outH)
             .line(0,outH+outH/2, outW,outH+outH/2)
             .stroke_style("blue")
-            .line(points0);
+            .line(points0)
+            .stroke_style("purple")
+            .line(points1);
         anim.frame().save()
             .drawImage(0, 0,outH, outW,outH, 0,outH, outW,outH)
             .text(10, 10, std::string("Generation ") + std::to_string(generation))
             .stroke_style("red")
             .line(points)
-            .text(50, 20,  std::string("L1: relu(") + std::to_string(weights[0]) + " + IN * " + std::to_string(weights[1]) + ")")
-            .text(50, 40, std::string("O1: ") + std::to_string(weights[2]) + " + IN * " + std::to_string(weights[3]))
+            .text(10, 30,  std::string("L1.1: relu(") + std::to_string(weights[0]) + " + IN * " + std::to_string(weights[1]) + ")")
+            .text(10, 50,  std::string("L1.2: relu(") + std::to_string(weights[2]) + " + IN * " + std::to_string(weights[3]) + ")")
+            .text(10, 70, std::string("O1: ") + std::to_string(weights[4])
+                + " + IN_1 * " + std::to_string(weights[5])
+                + " + IN_2 * " + std::to_string(weights[6]))
             .wait(waits);
-        anim.next_frame();
     };
 
     const size_t numGens = 100;
