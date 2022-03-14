@@ -144,12 +144,7 @@ public:
 class CoordExpressionValue : public ExpressionValue {
 public:
 	CoordExpressionValue(const std::string& v) : ExpressionValue{ v } {}
-	CoordExpressionValue(const int& v) : ExpressionValue{ std::to_string(v) } {}
-#ifdef _WIN64
-	CoordExpressionValue(const SizeType& v) : ExpressionValue{ std::to_string(v) } {}
-#endif
-	CoordExpressionValue(const size_t& v) : ExpressionValue{ std::to_string(v) } {}
-	CoordExpressionValue(const CoordType& v) : ExpressionValue{ std::to_string(v) } {}
+	template<typename T> CoordExpressionValue(const T& v) : ExpressionValue{ std::to_string(v) } {}
 };
 
 class BoolExpressionValue : public ExpressionValue {
@@ -502,6 +497,31 @@ public:
 	}
 };
 
+class DrawImage : public Drawable {
+	SizeType surface;
+	CoordExpressionValue sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight;
+public:
+	explicit DrawImage(SizeType surface,
+		const CoordExpressionValue& sx, const CoordExpressionValue& sy,
+		const CoordExpressionValue& sWidth, const CoordExpressionValue& sHeight,
+		const CoordExpressionValue& dx, const CoordExpressionValue& dy,
+		const CoordExpressionValue& dWidth, const CoordExpressionValue& dHeight)
+			: surface{surface},
+			sx{sx}, sy{sy}, sWidth{sWidth}, sHeight{sHeight}, dx{dx}, dy{dy}, dWidth{dWidth}, dHeight{dHeight}
+			{}
+	virtual void draw(std::ostream& os) const override {
+		os << "ctx.drawImage(surfaces[" << surface << "],"
+			<< sx.to_string() << ","
+			<< sy.to_string() << ","
+			<< sWidth.to_string() << ","
+			<< sHeight.to_string() << ","
+			<< dx.to_string() << ","
+			<< dy.to_string() << ","
+			<< dWidth.to_string() << ","
+			<< dHeight.to_string() << ");\n";
+	}
+};
+
 using DrawableVector = std::vector<std::unique_ptr<Drawable>>;
 using ExpressionVector = std::vector<std::unique_ptr<Expression>>;
 
@@ -619,6 +639,13 @@ public:
 		add_coord_expression(std::make_unique<LinearRangeExpression>(0, n_frames, n_frames));
 		return *this;
 	}
+	Frame& drawImage(SizeType surface, const CoordExpressionValue& sx, const CoordExpressionValue& sy,
+		const CoordExpressionValue& sWidth, const CoordExpressionValue& sHeight,
+		const CoordExpressionValue& dx, const CoordExpressionValue& dy,
+		const CoordExpressionValue& dWidth, const CoordExpressionValue& dHeight)
+	{
+		return add_drawable(std::make_unique<DrawImage>(surface, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight));
+	}
 
 	// EXPRESSION WRAPPERS
 	const PointExpressionValue& linear_point_range(const Vec2& start, const Vec2& stop, SizeType steps)
@@ -662,6 +689,7 @@ public:
 
 	Frame& save();
 	Frame& define_macro(const std::string& name);
+	Frame& surface(SizeType i);
 };
 
 class Save : public Frame {
@@ -676,6 +704,24 @@ public:
 
 Frame& Frame::save() {
 	add_drawable(std::make_unique<Save>());
+	return static_cast<Frame&>(*dwbl_vec.back());
+}
+
+class Surface : public Frame {
+	SizeType surface_id;
+public:
+	explicit Surface(SizeType i) : surface_id{ i } {}
+	virtual void draw(std::ostream& os) const override {
+		os << 
+			"context_stack.push(ctx);\n" <<
+			"ctx = surfaces[" << surface_id << "].getContext('2d');\n";
+		Frame::draw(os);
+		os << "ctx = context_stack.pop();\n";
+	}
+};
+
+Frame& Frame::surface(SizeType i) {
+	add_drawable(std::make_unique<Surface>(i));
 	return static_cast<Frame&>(*dwbl_vec.back());
 }
 
@@ -771,16 +817,28 @@ private:
 	const std::string canvas_name = "anim_canvas_1";
 
 	LayerVector layer_vec;
-	size_t cur_layer;
+	size_t cur_layer{ 0 };
+	size_t num_surfaces{ 0 };
+
+	std::string output_file;
 
 public:
 	HtmlAnim() { clear(); }
 	explicit HtmlAnim(const char* title = "HtmlAnim",
 		SizeType width = 1024, SizeType height = 768)
-		: title{ title }, width{ width }, height{ height }, cur_layer{ 0 } {
+		: title{ title }, width{ width }, height{ height } {
 		clear();
 		css_style_stream << "body{background-color:#f2f2f2;color:#000000;font-family:sans-serif;font-size:medium;font-weight:normal;}";
 	}
+
+	~HtmlAnim()
+	{
+		if(!output_file.empty()) {
+			write_file(output_file.c_str());
+		}
+	}
+
+	void set_num_surfaces(size_t n) { num_surfaces = n; }
 
 	void clear() {
 		layer_vec.clear();
@@ -809,6 +867,8 @@ public:
 
 	auto get_width() const {return width;}
 	auto get_height() const {return height;}
+
+	void write_file_on_destruct(const std::string& file) { output_file = file; }
 
 private:
 	void write_header(std::ostream& os) const;
@@ -862,6 +922,17 @@ void HtmlAnim::write_script(std::ostream& os) const {
 	os << "<!--\n";
 	os << "var canvas = document.getElementById('" << canvas_name << "');\n";
 	os << "var offscreens = [];\n";
+	os << "var surfaces = [];\n";
+	os << "var context_stack = [];\n";
+
+	os << "for (var i = 0; i < " << num_surfaces << "; ++i) {";
+	os << R"(
+var cv = document.createElement('canvas');
+cv.width = canvas.width;
+cv.height = canvas.height;
+surfaces.push(cv);
+}
+)";
 
 	write_definitions(os);
 	write_layers(os);

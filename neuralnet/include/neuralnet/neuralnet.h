@@ -9,7 +9,8 @@ public:
     NeuralNet() : nInputs{0}, outputLinear{false} {}
     explicit NeuralNet(size_t nInputs, const std::vector<size_t>& layerSizes, bool outputIsLinear=false);
 
-    size_t run(const double* inputs, std::vector<double>& outputs) const;
+    size_t run(const double* inputs, std::vector<double>& outputs,
+        std::vector<std::vector<double>>* allOutputs=nullptr) const;
 
     std::vector<double>& getWeights() { return weights; }
     const std::vector<double>& getWeights() const { return weights; }

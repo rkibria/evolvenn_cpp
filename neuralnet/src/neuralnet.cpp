@@ -18,11 +18,15 @@ NeuralNet::NeuralNet(size_t nInputs_, const std::vector<size_t>& layerSizes_, bo
     weights.resize(nWeights);
 }
 
-size_t NeuralNet::run(const double* inputs, std::vector<double>& outputs) const
+size_t NeuralNet::run(const double* inputs, std::vector<double>& outputs,
+    std::vector<std::vector<double>>* allOutputs) const
 {
     const auto maxOutputsSize = *std::max_element(layerSizes.cbegin(), layerSizes.cend());
     if(outputs.size() < maxOutputsSize) {
         outputs.resize(maxOutputsSize * 2);
+    }
+    if(allOutputs) {
+        allOutputs->clear();
     }
 
     auto inputPtr = inputs;
@@ -30,6 +34,9 @@ size_t NeuralNet::run(const double* inputs, std::vector<double>& outputs) const
     size_t weightsBegin = 0;
     size_t outputBegin = 0;
     for(size_t lrIdx = 0; lrIdx < layerSizes.size(); ++lrIdx) {
+        if(allOutputs) {
+            allOutputs->emplace_back(std::vector<double>());
+        }
         const auto lrSz = layerSizes[lrIdx];
         outputBegin = (lrIdx % 2 ) ? maxOutputsSize : 0;
 
@@ -43,6 +50,9 @@ size_t NeuralNet::run(const double* inputs, std::vector<double>& outputs) const
             // https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
             const auto activation = linearOutput ? weightedInputs : std::max(0.0, weightedInputs);
             outputs[outputBegin + neuIdx] = activation;
+            if(allOutputs) {
+                allOutputs->back().emplace_back(activation);
+            }
         }
 
         inputPtr = &outputs.data()[outputBegin];

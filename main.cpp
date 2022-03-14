@@ -55,7 +55,7 @@ double targetFunction(double x)
 class NnIndividual : public Individual
 {
 public:
-    NnIndividual() : nn(1, {8, 8, 1}, true), stddev{ 0.25 }
+    NnIndividual() : nn(1, {1, 1}, true), stddev{ 0.25 }
     {
         auto& weights = nn.getWeights();
         for(auto& w : weights) {
@@ -181,23 +181,27 @@ void converging1()
 
 void evolution1()
 {
-    HtmlAnim::HtmlAnim anim("Evolution progress");
     const int outW = 500, outH = 300;
+    HtmlAnim::HtmlAnim anim("Evolution progress", outW, 3*outH);
+    anim.set_num_surfaces(1);
+    anim.write_file_on_destruct("progress.html");
+
     const auto getMapX = [outW](double x) { return outW/2 + x / M_PI * outW/2; };
-    const auto getMapY = [outH](double y) { return outH/2 - y * outH/2 * 0.9; };
+    const auto getMapY = [outH](int section, double y) { return section*outH + outH/2 - y * outH/2 * 0.9; };
     {
         HtmlAnim::Vec2Vector points;
         for(int i = 0; i < sections + 1; ++i) {
             const double x = -M_PI + 2 * M_PI / sections * i;
             const auto y = targetFunction(x);
-            points.emplace_back(HtmlAnim::Vec2(getMapX(x), getMapY(y)));
+            points.emplace_back(HtmlAnim::Vec2(getMapX(x), getMapY(0, y)));
         }
         anim.frame().save()
             .fill_style("white").rect(0, 0,
                 static_cast<double>(anim.get_width()), static_cast<double>(anim.get_height()), true)
             .stroke_style("gray")
             .line(0,outH/2, outW,outH/2)
-            .line(outW/2,0, outW/2,outH)
+            .line(outW/2,0, outW/2,2*outH)
+            .line(0,outH+outH/2, outW,outH+outH/2)
             .stroke_style("green")
             .line(points);
     }
@@ -215,16 +219,30 @@ void evolution1()
     NnIndividual best;
     std::vector<double> outputs;
 
-    const auto drawBest = [&anim, &best, &outputs, &getMapX, &getMapY](size_t generation, int waits) {
-        HtmlAnim::Vec2Vector points;
+    const auto drawBest = [&anim, &best, &outputs, &getMapX, &getMapY, outW, outH](size_t generation, int waits) {
+        HtmlAnim::Vec2Vector points, points0;
+        std::vector<std::vector<double>> allOutputs;
         for(int i = 0; i < sections + 1; ++i) {
             const double x = -M_PI + 2 * M_PI / sections * i;
             double inputs = x / M_PI;
-            const auto resultIdx = best.nn.run(&inputs, outputs);
+            const auto resultIdx = best.nn.run(&inputs, outputs, &allOutputs);
             const auto y = outputs[resultIdx];
-            points.emplace_back(HtmlAnim::Vec2(getMapX(x), getMapY(y)));
+            const auto mapX = getMapX(x);
+            points.emplace_back(HtmlAnim::Vec2(mapX, getMapY(0, y)));
+            points0.emplace_back(HtmlAnim::Vec2(mapX, getMapY(1, allOutputs[0][0])));
         }
+        anim.frame()
+            .surface(0)
+            .save()
+            .fill_style("white")
+            .rect(0,outH, outW,outH, true)
+            .stroke_style("gray")
+            .line(outW/2,outH, outW/2,2*outH)
+            .line(0,outH+outH/2, outW,outH+outH/2)
+            .stroke_style("blue")
+            .line(points0);
         anim.frame().save()
+            .drawImage(0, 0,outH, outW,outH, 0,outH, outW,outH)
             .text(10, 10, std::string("Generation ") + std::to_string(generation))
             .stroke_style("red")
             .line(points)
@@ -232,7 +250,7 @@ void evolution1()
         anim.next_frame();
     };
 
-    const size_t numGens = 2000;
+    const size_t numGens = 100;
     int numBests = 0;
     do {
         pop.evolve();
@@ -242,7 +260,7 @@ void evolution1()
             ++numBests;
         }
 
-        if(generation == 1 || generation % 100 == 0) {
+        if(generation == 1 || generation % 10 == 0) {
             const auto stop = std::chrono::high_resolution_clock::now();
             const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
             std::cout << "gen " << generation << ": best " << best.getFitness()
@@ -257,8 +275,6 @@ void evolution1()
     } while(generation < numGens);
 
     drawBest(generation, 180);
-
-    anim.write_file("progress.html");
 }
 
 int main(int argc, char **argv)
