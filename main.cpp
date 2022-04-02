@@ -233,6 +233,8 @@ void evolution1()
             points1.emplace_back(HtmlAnim::Vec2(mapX, getMapY(1, allOutputs[0][1])));
         }
 
+        constexpr auto l11color = "blue";
+        constexpr auto l12color = "purple";
         const auto& weights = best.nn.getWeights();
         anim.frame()
             .surface(0)
@@ -242,20 +244,23 @@ void evolution1()
             .stroke_style("gray")
             .line(outW/2,outH, outW/2,2*outH)
             .line(0,outH+outH/2, outW,outH+outH/2)
-            .stroke_style("blue")
+            .stroke_style(l11color)
             .line(points0)
-            .stroke_style("purple")
+            .stroke_style(l12color)
             .line(points1);
         anim.frame().save()
             .drawImage(0, 0,outH, outW,outH, 0,outH, outW,outH)
             .text(10, 10, std::string("Generation ") + std::to_string(generation))
             .stroke_style("red")
             .line(points)
+            .fill_style(l11color)
             .text(10, 30,  std::string("L1.1: relu(") + std::to_string(weights[0]) + " + IN * " + std::to_string(weights[1]) + ")")
+            .fill_style(l12color)
             .text(10, 50,  std::string("L1.2: relu(") + std::to_string(weights[2]) + " + IN * " + std::to_string(weights[3]) + ")")
+            .fill_style("black")
             .text(10, 70, std::string("O1: ") + std::to_string(weights[4])
-                + " + IN_1 * " + std::to_string(weights[5])
-                + " + IN_2 * " + std::to_string(weights[6]))
+                + " + L1.1 * " + std::to_string(weights[5])
+                + " + L1.2 * " + std::to_string(weights[6]))
             .wait(waits);
     };
 
